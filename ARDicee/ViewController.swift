@@ -74,11 +74,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // Pegue o arquivo e arraste para a pasta art.scnassets
         // Selecione o arquivo e va em Editor > Convert to SceneKit file format
         
-        let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn" )
-        if let diceNode = diceScene?.rootNode.childNode(withName: "Dice", recursively: true) {
-            diceNode.position = SCNVector3(0, 0, -0.1)
-            sceneView.scene.rootNode.addChildNode(diceNode)
-        }
+//        let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn" )
+//
+//        // Um objeto 3D pode ter child nodes. Entao, ao se carregar um objeto 3D e interessante fazer o processo recursivamente, para que toda a sua arvore de node seja tambem carregada.
+//        if let diceNode = diceScene?.rootNode.childNode(withName: "Dice", recursively: true) {
+//            diceNode.position = SCNVector3(0, 0, -0.1)
+//            sceneView.scene.rootNode.addChildNode(diceNode)
+//        }
         
     }
     
@@ -91,6 +93,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
 
         //A flag abaixo e util para saber se o aparelho tem suporte a tecnologia
         print(ARWorldTrackingConfiguration.isSupported)
+        
+        // Aqui configuramos a deteccao de superficies horizontais. (Vertical ainda nao esta disponivel)
+        // Quando a superficie e detectada, uma das delegate functions e chamada. Veja mais abaixo
+        configuration.planeDetection = .horizontal
 
         // Run the view's session
         sceneView.session.run(configuration)
@@ -101,6 +107,45 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         // Pause the view's session
         sceneView.session.pause()
+    }
+    
+    // didAdd e a delegate function chamada assim que um um objeto e adicionado ao espaco virtual, seja um plano, um objeto 3D ou uma imagem.
+    // Quando voce configura a deteccao de planos horizontais, a framework, assim que detectar, automaticamente atribui um widh e um height para essa superficie, na forma de um objeto do tipo ARPlaneAnchor.
+    // Assim, teremos no espaco virtual uma superficie com coordenadas onde voce podera posicionar objetos.
+    func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
+        // Vamos verificar se o objeto adicionado e um ARPlaneAnchor
+        if anchor is ARPlaneAnchor {
+            
+            let planeAnchor = anchor as! ARPlaneAnchor
+            
+            // Para trabalhar com o plano no ambiente virtual, temos que criar um ScenePlane com as extensoes do plano que foi detectado
+            let plane =  SCNPlane(width: CGFloat(planeAnchor.extent.x), height: CGFloat(planeAnchor.extent.z))
+            
+            // vamos criar um no para o plano e posiciona-lo no centro do plano.
+            let planeNode = SCNNode()
+            planeNode.position = SCNVector3(x: planeAnchor.center.x, y: 0.0, z: planeAnchor.center.z)
+            
+            // ATENCAO. O SCNPlane, depois de criado, fica com representacao vertical. Temos que rotaciona-lo parar ficar horizontal.
+            planeNode.transform = SCNMatrix4MakeRotation(-Float.pi/2.0, 1, 0, 0)
+            
+            // Vamos adicionar uma textura de grid ao plano, para que possamos ver ele no ambiente virtual
+            let gridMaterial = SCNMaterial()
+            // Nosso grid e uma imagem png, isso significa que poderemos ver atravez do grid.
+            gridMaterial.diffuse.contents = UIImage(named: "art.scnassets/grid.png")
+            
+            // Adicionamos o grid ao plano
+            plane.materials = [gridMaterial]
+            
+            // Adicionamos o plano ao no (que vai transforma-lo, rotacionando-o)
+            planeNode.geometry = plane
+            
+            //node e um dos argumentos da funcao. Ele referencia sceneView.scene.rootNode
+            node.addChildNode(planeNode)
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        <#code#>
     }
 
 }
