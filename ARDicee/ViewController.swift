@@ -161,27 +161,28 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             // Se o array nao estiver vazio, significa que o usuario clicou em algum plano.
             
             if let hitResult = results.first {
-                
-                let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn")
-                if let diceNode = diceScene?.rootNode.childNode(withName: "Dice", recursively: true) {
-                
-                    // Agora, basta acessarmos as coordenadas (x,y,z) do objeto SCNPlane que foi encontrado, e inserirmos um dado nele!
-                    let x_coord = hitResult.worldTransform.columns.3.x
-                    /*
-                        let y_coord = hitResult.worldTransform.columns.3.y
-                        Se colocassemos so isso teriamos um probleminha. Os dados ficariam com metade para cima do plano e medate para fora. Isso pois o rootNode do dado e o seu centro. Esse ponto que seria colocado no plano e metade de sua extensao em y ficaria pra cima e outra metade para baixo. Para resolver isso, basta somar a coordenada y com o valor do raio da esfera que engloba o dado.
-                    */
-                    let y_coord = hitResult.worldTransform.columns.3.y + diceNode.boundingSphere.radius
-                    let z_coord =  hitResult.worldTransform.columns.3.z
-                    diceNode.position = SCNVector3(x_coord, y_coord, z_coord)
-                    
-                    diceArray.append(diceNode)
-                    
-                    sceneView.scene.rootNode.addChildNode(diceNode)
-                    
-                    roll(diceNode)
-                }
+                addDice(atLocation : hitResult)
             }
+        }
+    }
+    
+    private func addDice(atLocation : ARHitTestResult){
+        let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn")
+        if let diceNode = diceScene?.rootNode.childNode(withName: "Dice", recursively: true) {
+        
+            // Agora, basta acessarmos as coordenadas (x,y,z) do objeto SCNPlane que foi encontrado, e inserirmos um dado nele!
+            let x_coord = atLocation.worldTransform.columns.3.x
+            /*
+                let y_coord = hitResult.worldTransform.columns.3.y
+                Se colocassemos so isso teriamos um probleminha. Os dados ficariam com metade para cima do plano e medate para fora. Isso pois o rootNode do dado e o seu centro. Esse ponto que seria colocado no plano e metade de sua extensao em y ficaria pra cima e outra metade para baixo. Para resolver isso, basta somar a coordenada y com o valor do raio da esfera que engloba o dado.
+            */
+            let y_coord = atLocation.worldTransform.columns.3.y + diceNode.boundingSphere.radius
+            let z_coord =  atLocation.worldTransform.columns.3.z
+            diceNode.position = SCNVector3(x_coord, y_coord, z_coord)
+            diceArray.append(diceNode)
+            sceneView.scene.rootNode.addChildNode(diceNode)
+            
+            roll(diceNode)
         }
     }
     
