@@ -180,13 +180,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                     sceneView.scene.rootNode.addChildNode(diceNode)
                     
                     roll(diceNode)
-                    
                 }
-                
             }
-            
         }
-        
     }
     
     private func rollAll() {
@@ -203,6 +199,26 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         dice.runAction(
             SCNAction.rotateBy(x: CGFloat(randomX * 5), y: 0, z: CGFloat(randomZ * 5), duration: 0.5)
         )
+    }
+    
+    
+    @IBAction func removeDicesButtonPressed(_ sender: UIBarButtonItem) {
+        
+        if !diceArray.isEmpty {
+            for dice in diceArray {
+                dice.removeFromParentNode()
+            }
+        }
+        
+    }
+    
+    @IBAction func rollButtonPressed(_ sender: UIBarButtonItem) {
+        rollAll()
+    }
+    
+    // O metodo abaixo e chamado depois que o usuario chacoalha o celular. No momento que ele para o movimento, mais especificamente.
+    override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
+        rollAll()
     }
 
 }
