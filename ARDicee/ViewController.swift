@@ -14,6 +14,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
 
     @IBOutlet var sceneView: ARSCNView!
     
+    // Toda vez que o usuario toca em um plano, um dado sera criado. Esses dados serao armazenados nesse array.
+    private var diceArray = [SCNNode]()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -144,8 +147,62 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         }
     }
     
+    
+    // Detecta toques do usuario na tela e interpreta como toques em alguma posicao no ambiente virtual
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        <#code#>
+        // touches e um array de elementos do tipo UITouch. Isso pois o usuario pode tocar varias vezes a tela. Mas multiplos toques so serao detectados se configurarmos a nossa Sessao de realidade aumentada com o Multitouching. O que nao foi feito. Entao esse array sempre vai ter 1 unico elemento.
+        if let touch = touches.first {
+            
+            //Recebemos a localizacao do toque na tela do celular (aqui temos uma localizacao 2D, isto e, apenas as coordenadas x e y)
+            let touchLocation = touch.location(in: sceneView)
+            
+            //O metodo abaixo pega ao ponto, com coordenadas x e y, que representa o local na tela 2D do celular onde aconteceu o toque, e expande um eixo z a partir do mesmo. Esse metodo retorna os objetos SCNPlane que forem encontrados nesse eixo.
+            let results = sceneView.hitTest(touchLocation, types: .existingPlaneUsingExtent)
+            // Se o array nao estiver vazio, significa que o usuario clicou em algum plano.
+            
+            if let hitResult = results.first {
+                
+                let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn")
+                if let diceNode = diceScene?.rootNode.childNode(withName: "Dice", recursively: true) {
+                
+                    // Agora, basta acessarmos as coordenadas (x,y,z) do objeto SCNPlane que foi encontrado, e inserirmos um dado nele!
+                    let x_coord = hitResult.worldTransform.columns.3.x
+                    /*
+                        let y_coord = hitResult.worldTransform.columns.3.y
+                        Se colocassemos so isso teriamos um probleminha. Os dados ficariam com metade para cima do plano e medate para fora. Isso pois o rootNode do dado e o seu centro. Esse ponto que seria colocado no plano e metade de sua extensao em y ficaria pra cima e outra metade para baixo. Para resolver isso, basta somar a coordenada y com o valor do raio da esfera que engloba o dado.
+                    */
+                    let y_coord = hitResult.worldTransform.columns.3.y + diceNode.boundingSphere.radius
+                    let z_coord =  hitResult.worldTransform.columns.3.z
+                    diceNode.position = SCNVector3(x_coord, y_coord, z_coord)
+                    
+                    diceArray.append(diceNode)
+                    
+                    sceneView.scene.rootNode.addChildNode(diceNode)
+                    
+                    roll(diceNode)
+                    
+                }
+                
+            }
+            
+        }
+        
+    }
+    
+    private func rollAll() {
+        if !diceArray.isEmpty {
+            for dice in diceArray {
+                roll(dice)
+            }
+        }
+    }
+    
+    private func roll(_ dice: SCNNode) {
+        let randomX = Float(arc4random_uniform(4)+1) * (Float.pi/2.0)
+        let randomZ = Float(arc4random_uniform(4)+1) * (Float.pi/2.0)
+        dice.runAction(
+            SCNAction.rotateBy(x: CGFloat(randomX * 5), y: 0, z: CGFloat(randomZ * 5), duration: 0.5)
+        )
     }
 
 }
